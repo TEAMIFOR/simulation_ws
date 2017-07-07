@@ -1,0 +1,198 @@
+<sdf version='1.5'>
+  <model name='iris_opt_flow'>
+
+    <include>
+      <uri>model://iris</uri>
+    </include>
+
+    <include>
+      <uri>model://lidar</uri>
+      <pose>-0.12 0 0 0 3.1415 0</pose>
+    </include>
+    <joint name="lidar_joint" type="revolute">
+      <child>lidar::link</child>
+      <parent>iris::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+    <include>
+      <uri>model://flow_cam</uri>
+      <pose>-0.12 0.05 0 0 1.5708 1.5708</pose>
+    </include>
+    <joint name="flow_joint" type="revolute">
+      <child>camera::link</child>
+      <parent>iris::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+  
+  <model name="camera1model">
+    <pose>0 0 -0.042 0 1.57 0</pose>
+    <link name="camera1link">
+      <inertial>
+        <mass>1e-5</mass>
+        <inertia>
+          <ixx>1e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1e-6</izz>
+        </inertia>
+      </inertial>
+      <collision name="camera1collision">
+        <geometry>
+          <box>
+            <size>0.02 0.05 0.05</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.05 0.05</size>
+          </box>
+        </geometry>
+      </visual>
+      <sensor type="camera" name="camera1">
+        <update_rate>30.0</update_rate>
+        <camera name="camera1head">
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>800</width>
+            <height>800</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <!-- Noise is sampled independently per pixel on each frame.
+                 That pixel's noise value is added to each of its color
+                 channels, which at that point lie in the range [0,1]. -->
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>camera1</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>camera1link</frameName>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </link>
+  </model>
+  <joint name="camera1_joint" type="fixed">
+      <child>camera1model::camera1link</child>
+      <parent>iris::base_link</parent>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+   </joint>
+
+  <!--model name="camera2model">
+    <pose>0.11 0.03 0 0 1.57 0</pose>
+    <link name="camera2link">
+      <inertial>
+        <mass>1e-5</mass>
+        <inertia>
+          <ixx>1e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1e-6</izz>
+        </inertia>
+      </inertial>
+      <collision name="camera2collision">
+        <geometry>
+          <box>
+            <size>0.02 0.05 0.05</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.05 0.05</size>
+          </box>
+        </geometry>
+      </visual>
+      <sensor type="camera" name="camera2">
+        <update_rate>30.0</update_rate>
+        <camera name="camera2head">
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>800</width>
+            <height>800</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>camera2</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>camera2link</frameName>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </link>
+  </model>
+  <joint name="camera2_joint" type="fixed">
+      <child>camera2model::camera2link</child>
+      <parent>iris::base_link</parent>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+   </joint-->
+
+
+  </model>
+</sdf>
