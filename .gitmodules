@@ -1,3 +1,0 @@
-[submodule "src/image_common"]
-	path = src/image_common
-url = https://github.com/ros-perception/image_common
