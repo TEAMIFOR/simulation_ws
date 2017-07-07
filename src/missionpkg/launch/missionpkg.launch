@@ -1,0 +1,9 @@
+<launch>
+  
+  <node name="ellipse_detection" pkg="missionpkg" type="el_det_fi.py" output="screen"/>
+  <node name="object_detect_follow" pkg="missionpkg" type="objdetnfollow" output="screen">
+    <param name="wn" value="0.2" />
+    <param name="r" value="3.0" />
+  </node>
+
+</launch>
