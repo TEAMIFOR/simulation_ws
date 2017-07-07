@@ -35,6 +35,7 @@ v1 ellipse detection with single onboard cam
 v2 ellipse detection with two onboard cam
 v3 ellipse detection and offboard surveillance script fireup from single launch
 v4 object detection and following scripts added (feedback loop based on quadrants)
+v5 object detection and following scripts added (feedback loop based on gradient map)
 ```
 
 ## Notes
