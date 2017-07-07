@@ -52,6 +52,7 @@ double theta;
 double count=0.0;
 double wn;
 int ellFound=0;
+int isfollownstabilized=0;
 
 ros::Publisher local_pos_pub;
 ros::ServiceClient arming_client;
@@ -72,52 +73,7 @@ void cbLocalPosition(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     localPose_ = *msg;
 }
-/* This is the master brain which takes input from image processing node
-and tells ben if an ellipse has been found or not. Further it also sends 
-coordinates for ben to move in order to acheive object following 
-The 800x800 pixelcordinate frame is divided into 4 quadrants of 400x400
-pixels and each quadrant increments/ decrements ben's coordinates acc.
-TODO: The quadrant implementation needs to be revoked as ben's cameras 
-will be tilted. Good sugesstions: Gradient map 
-*/
-void genTargets(const geometry_msgs::Vector3 &vector3)
-{
-    geometry_msgs::Vector3 vec;
-    vec.x = vector3.x;
-    vec.y = vector3.y;
-    vec.z = vector3.z;
-    if( vec.x==0 && vec.y==0 && vec.z==0 ) // distance_calulation gotta do its duty
-    {
-      ellFound = 0;
 
-    }else if( vec.x!=0 || vec.y!=0 || vec.z!=0 )
-    {
-      ellFound =1;
-        if( vec.x>-100 && vec.y>-100 && vec.x<=400 && vec.y<=400 ){
-          pose.pose.position.x = localPose_.pose.position.x  + 0.09f;
-          pose.pose.position.y = localPose_.pose.position.y  + 0.09f;
-          pose.pose.position.z = 2.00f ;
-
-        }else if( vec.x>400 && vec.y>-100 && vec.x<900 && vec.y<=400 ){
-          pose.pose.position.x = localPose_.pose.position.x  + 0.09f;
-          pose.pose.position.y = localPose_.pose.position.y  - 0.09f;
-          pose.pose.position.z = 2.00f ;
-
-        }else if( vec.x>-100 && vec.y>400 && vec.x<400 && vec.y<900){
-          pose.pose.position.x = localPose_.pose.position.x  - 0.09f;
-          pose.pose.position.y = localPose_.pose.position.y  + 0.09f;
-          pose.pose.position.z = 2.00f ;
-
-        }else if( vec.x>400 && vec.y>400 && vec.x<900 && vec.y<900 ){
-          pose.pose.position.x = localPose_.pose.position.x  - 0.09f;
-          pose.pose.position.y = localPose_.pose.position.y  - 0.09f;
-          pose.pose.position.z = 2.00f ;
-
-        }else{ // this shouldnt occur but added just in case for dev purposes
-          printf("impossible event occured: %f, %f, %f\n", vec.x, vec.y, vec.z );
-        }
-    }
-}
 bool isTargetPos()
 {
      if ( abs(pose.pose.position.x - localPose_.pose.position.x) < 0.0005 &&
@@ -127,6 +83,86 @@ bool isTargetPos()
         return true;
      }
     return false;   
+}
+/* This is the master brain which takes input from image processing node
+and tells ben if an ellipse has been found or not. Further it also sends 
+coordinates for ben to move in order to acheive object following 
+The 800x800 pixelcordinate frame is divided into 4 quadrants of 400x400
+pixels and each quadrant increments/ decrements ben's coordinates acc.
+TODO: The quadrant implementation needs to be revoked as ben's cameras 
+will be tilted. Good sugesstions: Gradient map 
+UPDATE: not so great gradient map implemented, speed fix, wiggle reduced
+overshoot still present, hoping wouldnt cause problems in mission scenario
+*/
+
+void genTargets(const geometry_msgs::Vector3 &vector3)
+{
+    geometry_msgs::Vector3 vec;
+    vec.x = vector3.x;
+    vec.y = vector3.y;
+    vec.z = vector3.z;
+    if( vec.x==0 && vec.y==0 && vec.z==0 ) //distance_calulation gotta do its duty
+    {
+      ellFound = 0;
+
+    }else if( vec.x!=0 || vec.y!=0 || vec.z!=0 )
+    {
+      ellFound =1;
+      if( vec.x>300 && vec.y>300 && vec.x<=500 && vec.y<=500 ){
+          isfollownstabilized=1;
+
+      }else{
+        isfollownstabilized=0;
+        if( isTargetPos() ){
+
+              pose.pose.position.z = 2.00f ;
+              if( vec.y>-100 && vec.y<=0 && vec.x>-100 && vec.x<=400 ){ // 1st quad
+                  pose.pose.position.y = pose.pose.position.y  + 0.03;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03; 
+              }else if( vec.y>-100 && vec.y<=0 && vec.x>400 && vec.x<=900 ){ // 2nd quad
+                  pose.pose.position.y = pose.pose.position.y  - 0.03;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;      
+              }else if( vec.y>0 && vec.y<=100 && vec.x>-100 && vec.x<=400 ){ // 1st quad
+                  pose.pose.position.y = pose.pose.position.y  + 0.03;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;       
+              }else if( vec.y>0 && vec.y<=100 && vec.x>400 && vec.x<=900 ){ // 2nd quad
+                  pose.pose.position.y = pose.pose.position.y  - 0.03;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;    
+              }else if( vec.y>100 && vec.y<=200 && vec.x>-100 && vec.x<=400 ){ // 1st quad
+                  pose.pose.position.y = pose.pose.position.y  + 0.02;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;  
+              }else if( vec.y>100 && vec.y<=200 && vec.x>400 && vec.x<=900 ){ // 2nd quad
+                  pose.pose.position.y = pose.pose.position.y  - 0.02;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;       
+              }else if( vec.y>200 && vec.y<=300 && vec.x>-100 && vec.x<=400 ){ // 1st quad
+                  pose.pose.position.y = pose.pose.position.y  + 0.009;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;  
+              }else if( vec.y>200 && vec.y<=300 && vec.x>400 && vec.x<=900 ){ // 2nd quad
+                  pose.pose.position.y = pose.pose.position.y  - 0.009;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;    
+              }else if( vec.y>300 && vec.y<=400 && vec.x>-100 && vec.x<=400 ){ //1st quad
+                  pose.pose.position.y = pose.pose.position.y  + 0.003;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;         
+              }else if( vec.y>300 && vec.y<=400 && vec.x>400 && vec.x<=900 ){ //2nd quad
+                  pose.pose.position.y = pose.pose.position.y  - 0.003;
+                  pose.pose.position.x = pose.pose.position.x  + 0.03;       
+              }else if( vec.y>400 && vec.y<=500 && vec.x>-100 && vec.x<=400 ){ // 3rd quadrant
+                  pose.pose.position.y = pose.pose.position.y  + 0.004;
+                  pose.pose.position.x = pose.pose.position.x  - 0.03;     
+              }else if( vec.y>400 && vec.y<=500 && vec.x>400 && vec.x<=900 ){ //4th quad
+                  pose.pose.position.y = pose.pose.position.y  - 0.004;
+                  pose.pose.position.x = pose.pose.position.x  - 0.03;         
+              }else if( vec.y>500 && vec.y<=900 && vec.x>-100 && vec.x<=400 ){ // 3rd quadrant
+                  pose.pose.position.y = pose.pose.position.y  + 0.003;
+                  pose.pose.position.x = pose.pose.position.x  - 0.03;        
+              }else if( vec.y>500 && vec.y<=900 && vec.x>400 && vec.x<=900 ){ //4th quad
+                  pose.pose.position.y = pose.pose.position.y  - 0.003;
+                  pose.pose.position.x = pose.pose.position.x  - 0.03;         
+              }
+
+        }
+      }
+    }
 }
 
 int movetopos()
@@ -302,13 +338,18 @@ int main(int argc, char **argv)
                 last_request = ros::Time::now();
               }
             }
-              hoverPose_.pose.position.x = localPose_.pose.position.x;
-              hoverPose_.pose.position.y = localPose_.pose.position.y;
-              hoverPose_.pose.position.z = localPose_.pose.position.z;
-              //temporary fixtures
-              printf("fromx: %f tox: %f,   fromy: %f toy: %f z: %f\n", localPose_.pose.position.x, pose.pose.position.x, localPose_.pose.position.y, pose.pose.position.y, pose.pose.position.z);
-              local_pos_pub.publish(pose); 
-              std::this_thread::sleep_for(std::chrono::milliseconds(100));
+              if(!isfollownstabilized){
+                hoverPose_.pose.position.x = pose.pose.position.x;
+                hoverPose_.pose.position.y = pose.pose.position.y;
+                hoverPose_.pose.position.z = pose.pose.position.z;
+                local_pos_pub.publish(pose);
+                //printf("folowing\n"); 
+                //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                rate.sleep();
+              }else{
+                printf("hovering\n");
+                local_pos_pub.publish(hoverPose_); 
+              }
           }
       }
     }
