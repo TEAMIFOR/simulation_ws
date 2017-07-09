@@ -5,5 +5,5 @@
     <param name="wn" value="0.2" />
     <param name="r" value="3.0" />
   </node>
-
+  <node name="obstacle_node" pkg="missionpkg" type="obstacle_node" output="screen" />
 </launch>
