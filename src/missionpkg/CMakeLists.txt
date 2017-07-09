@@ -35,4 +35,11 @@ catkin_install_python(PROGRAMS src/el_det_fi.py
 
 add_executable(objdetnfollow src/objdetnfollow.cpp)
 target_link_libraries(objdetnfollow ${catkin_LIBRARIES})
+add_executable(obstacle_node src/obstdet.cpp)
+target_link_libraries(obstacle_node ${catkin_LIBRARIES})
+install(TARGETS obstacle_node obstacle_node
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
