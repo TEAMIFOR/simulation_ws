@@ -47,6 +47,15 @@ position for some time to do the selection and still send setpoints
 
 #include <geometry_msgs/Vector3Stamped.h>
 
+#include <std_msgs/Float32.h>
+#include <std_msgs/Float32.h>
+std_msgs::Float32 angMsg;
+std_msgs::Float32 distMsg;
+ros::Subscriber obs_ang_sub;
+ros::Subscriber obs_dist_sub;
+int obsFound=0;
+geometry_msgs::PoseStamped repelPose_; 
+
 double r;
 double theta;
 double count=0.0;
@@ -73,7 +82,33 @@ void cbLocalPosition(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     localPose_ = *msg;
 }
+void genRepulsion(const std_msgs::Float32::ConstPtr& msg)
+{
+    distMsg = *msg;
+    if( distMsg.data==0 && angMsg.data==0 ){
+      obsFound=0;
 
+    }else if( distMsg.data!=0 || angMsg.data!=0 ){
+      obsFound=1;
+        //printf("Obstacle detected at : %f , %f \n", distMsg.data, angMsg.data);
+          repelPose_.pose.position.z = 2.00f ;
+          if( angMsg.data>=0 && angMsg.data<50 ){
+            repelPose_.pose.position.x = repelPose_.pose.position.x  ;
+            repelPose_.pose.position.y = repelPose_.pose.position.y  - 0.009;
+          }else if( angMsg.data>=50 && angMsg.data<160 ){
+            repelPose_.pose.position.x = repelPose_.pose.position.x  ;
+            repelPose_.pose.position.y = repelPose_.pose.position.y  + 0.009;
+          }else if( angMsg.data>=160 && angMsg.data<270 ){
+            repelPose_.pose.position.x = repelPose_.pose.position.x  ;
+            repelPose_.pose.position.y = repelPose_.pose.position.y  - 0.009;
+          }else if( angMsg.data>=270 && angMsg.data<320 ){
+            repelPose_.pose.position.x = repelPose_.pose.position.x  ;
+            repelPose_.pose.position.y = repelPose_.pose.position.y  - 0.009;
+          }
+
+    }
+
+}
 bool isTargetPos()
 {
      if ( abs(pose.pose.position.x - localPose_.pose.position.x) < 0.0005 &&
@@ -229,7 +264,8 @@ int main(int argc, char **argv)
     ros::Subscriber location_sub_ = nh.subscribe<geometry_msgs::PoseStamped>
             ("mavros/local_position/pose", 10, cbLocalPosition);
     mid_sub = nh.subscribe("/mid", 10, genTargets);
-
+    obs_ang_sub = nh.subscribe("/obstacle/angle", 10, getAngles);
+    obs_dist_sub = nh.subscribe("/obstacle/distance", 10, genRepulsion);
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(50.0);
   
@@ -254,7 +290,7 @@ int main(int argc, char **argv)
     /*ben takes off and goes into intial surveillance mode, stays
     here till a GB has been found and then transitions smoothly to
     next while loop */    
-    while(ros::ok() && !ellFound ) //ellipse found by first instance, 
+    while(ros::ok() && !ellFound && !obsFound) //ellipse found by first instance, 
     {
         theta = 0.2*count*0.001;
         pose.pose.position.x = 3*sin(theta);
@@ -263,6 +299,9 @@ int main(int argc, char **argv)
         hoverPose_.pose.position.x = localPose_.pose.position.x; // these help in hoverPhase
         hoverPose_.pose.position.y = localPose_.pose.position.y; // they are like lastknowloc
         hoverPose_.pose.position.z = localPose_.pose.position.z; 
+        repelPose_.pose.position.x = pose.pose.position.x; //backup values
+        repelPose_.pose.position.y = pose.pose.position.y;
+        repelPose_.pose.position.z = pose.pose.position.z;
         count++;
         if (!isTargetPos())
         {
@@ -275,7 +314,7 @@ int main(int argc, char **argv)
     GB_selected_following, GB_landing, GBs_not_found_surverying .. etc  */
     while(ros::ok())
     {
-      while(ros::ok() && !ellFound ) //survey to find next groundbot
+      while(ros::ok() && !ellFound && !obsFound) //survey to find next groundbot
       {
           mavros_msgs::SetMode offb_set_mode;
           offb_set_mode.request.custom_mode = "OFFBOARD";
@@ -309,7 +348,7 @@ int main(int argc, char **argv)
       }
      /* This is where ben follows the GB that has been bound
      TODO: follow until flag land_in_front_of_gb has been set */
-      while(ros::ok() && ellFound ) //this is da reeell place 
+      while(ros::ok() && ellFound && !obsFound) //this is da reeell place 
       {
           mavros_msgs::SetMode offb_set_mode;
           offb_set_mode.request.custom_mode = "OFFBOARD";
@@ -342,6 +381,9 @@ int main(int argc, char **argv)
                 hoverPose_.pose.position.x = pose.pose.position.x;
                 hoverPose_.pose.position.y = pose.pose.position.y;
                 hoverPose_.pose.position.z = pose.pose.position.z;
+                repelPose_.pose.position.x = pose.pose.position.x; //backup values
+                repelPose_.pose.position.y = pose.pose.position.y;
+                repelPose_.pose.position.z = pose.pose.position.z;
                 local_pos_pub.publish(pose);
                 //printf("folowing\n"); 
                 //std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -350,6 +392,45 @@ int main(int argc, char **argv)
                 printf("hovering\n");
                 local_pos_pub.publish(hoverPose_); 
               }
+          }
+      }      while(ros::ok() && obsFound) //obstacle found so highest priority here
+      {
+        printf("obstacle found avoiding\n");
+          mavros_msgs::SetMode offb_set_mode;
+          offb_set_mode.request.custom_mode = "OFFBOARD";
+          mavros_msgs::CommandBool arm_cmd;
+          arm_cmd.request.value = true;
+          ros::Time last_request = ros::Time::now();
+
+          for(int i=0;i<54;i++) //while(ros::ok())
+          {
+            if( current_state.mode != "OFFBOARD" && (ros::Time::now() - last_request > ros::Duration(5.0)))
+            {
+              if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.success)
+              {
+                ROS_INFO("Offboard enabled");
+              }
+              last_request = ros::Time::now();
+            } 
+            else 
+            {
+              if( !current_state.armed && (ros::Time::now() - last_request > ros::Duration(5.0)))
+              {
+                if( arming_client.call(arm_cmd) && arm_cmd.response.success)
+                {
+                  ROS_INFO("Vehicle armed");
+                }
+                last_request = ros::Time::now();
+              }
+            }
+              hoverPose_.pose.position.x = localPose_.pose.position.x;
+              hoverPose_.pose.position.y = localPose_.pose.position.y;
+              hoverPose_.pose.position.z = localPose_.pose.position.z;
+              /*hoverPose_.pose.position.x = localPose_.pose.position.x;
+              hoverPose_.pose.position.y = localPose_.pose.position.y;
+              hoverPose_.pose.position.z = localPose_.pose.position.z;*/
+              local_pos_pub.publish(repelPose_);
+              std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
       }
     }
