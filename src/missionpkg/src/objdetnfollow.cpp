@@ -91,19 +91,20 @@ void genRepulsion(const std_msgs::Float32::ConstPtr& msg)
     }else if( distMsg.data!=0 || angMsg.data!=0 ){
       obsFound=1;
         //printf("Obstacle detected at : %f , %f \n", distMsg.data, angMsg.data);
+        //assumption obstacles in clockwise dir, and letting drift of one of the coordinates carry
           repelPose_.pose.position.z = 2.00f ;
           if( angMsg.data>=0 && angMsg.data<50 ){
             repelPose_.pose.position.x = repelPose_.pose.position.x  ;
-            repelPose_.pose.position.y = repelPose_.pose.position.y  - 0.009;
+            repelPose_.pose.position.y = repelPose_.pose.position.y  + 0.009;
           }else if( angMsg.data>=50 && angMsg.data<160 ){
             repelPose_.pose.position.x = repelPose_.pose.position.x  ;
             repelPose_.pose.position.y = repelPose_.pose.position.y  + 0.009;
           }else if( angMsg.data>=160 && angMsg.data<270 ){
-            repelPose_.pose.position.x = repelPose_.pose.position.x  ;
-            repelPose_.pose.position.y = repelPose_.pose.position.y  - 0.009;
+            repelPose_.pose.position.x = repelPose_.pose.position.x  - 0.009;
+            repelPose_.pose.position.y = repelPose_.pose.position.y ;
           }else if( angMsg.data>=270 && angMsg.data<320 ){
-            repelPose_.pose.position.x = repelPose_.pose.position.x  ;
-            repelPose_.pose.position.y = repelPose_.pose.position.y  - 0.009;
+            repelPose_.pose.position.x = repelPose_.pose.position.x  - 0.009;
+            repelPose_.pose.position.y = repelPose_.pose.position.y  ;
           }
 
     }
