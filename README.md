@@ -37,7 +37,7 @@ v2 ellipse detection with two onboard cam
 v3 ellipse detection and offboard surveillance script fireup from single launch
 v4 object detection and following scripts added (feedback loop based on quadrants)
 v5 object detection and following scripts added (feedback loop based on gradient map)
-v6 detection and avoidance has been implemented (feedback loop based laser data)
+v6 Obstacle detection and avoidance has been implemented (feedback loop based laser data)
 ```
 
 ## Notes
