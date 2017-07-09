@@ -15,7 +15,7 @@ Editing necessary files
 2. Replace Firmware/Tools/sitl_gazebo/models/iris_opt_flow/iris_opt_flow.sdf (attach camera and define rostpoics usbcam substitute)
 3. Replace Firmware/Tools/sitl_gazebo/worlds/empty.world
 4. Replace Firmware/posix-confings/SITL/init/lpe/iris_opt_fow (custom tweaked params, reduce some errors)
-5. Replace ~/.gazebo/models/hokuyo/model.sdf (GPU laser with ros publisher /scan)
+5. Replace ~/.gazebo/models/hokuyo/model.sdf (make sure you have your gpu drivers installed in ubuntu)
 ```
 source Tools/setup_gazebo.bash $(pwd) $(pwd)/build_posix_sitl_lpe
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd)
@@ -37,6 +37,7 @@ v2 ellipse detection with two onboard cam
 v3 ellipse detection and offboard surveillance script fireup from single launch
 v4 object detection and following scripts added (feedback loop based on quadrants)
 v5 object detection and following scripts added (feedback loop based on gradient map)
+v6 detection and avoidance has been implemented (feedback loop based laser data)
 ```
 
 ## Notes
