@@ -3,6 +3,9 @@ ros simulation scripts for iarc mission7 using iris with optical flow, lpe and p
 
 Moved from simulation branch under odroid-ws, for previous commits refer https://github.com/TEAMIFOR/odroid_ws/commits/simulation
 
+![](https://media.giphy.com/media/jicJQyHtfrWN2/giphy.gif)
+
+
 ## Setup Intructions 
 PART A: Setup px4 flight stack and sim env
 ```
